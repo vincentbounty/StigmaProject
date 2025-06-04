@@ -1,0 +1,1398 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 > # --- I. SCRIPT SETUP AND PACKAGE LOADING ---\
+> print("--- I. SCRIPT SETUP AND PACKAGE LOADING ---")\
+[1] "--- I. SCRIPT SETUP AND PACKAGE LOADING ---"\
+> # Load necessary packages\
+> # Ensure all these packages are installed before running the script (e.g., install.packages("tidyverse"))\
+> library(tidyverse) # For data manipulation (dplyr, ggplot2, etc.)\
+> library(psych)     # For reliability analysis (alpha function)\
+> library(car)       # For Levene's test and Anova function (Type III SS)\
+> library(rstatix)   # For ANOVA assumption checks, effect sizes, some post-hoc utilities\
+> library(effectsize)# For more detailed effect sizes\
+> library(FSA)       # For Dunn's test (post-hoc for Kruskal-Wallis)\
+> library(emmeans)   # For post-hoc tests (estimated marginal means)\
+> # --- II. DATA LOADING ---\
+> print("--- II. DATA LOADING ---")\
+[1] "--- II. DATA LOADING ---"\
+> # Load the dataset\
+> # Assumption: Data.csv is in the same working directory as this script.\
+> # If not, provide the full path to Data.csv.\
+> if (file.exists("Data.csv")) \{\
++   survey_data <- read.csv("Data.csv")\
++   print("Data.csv loaded successfully.")\
++ \} else \{\
++   stop("Error: Data.csv not found in the working directory. Please check the file path.")\
++ \}\
+[1] "Data.csv loaded successfully."\
+> # Print the first few rows of the data frame to inspect\
+> print("Head of survey_data (first 6 rows):")\
+[1] "Head of survey_data (first 6 rows):"\
+> print(head(survey_data))\
+           StartDate            EndDate Status Progress Duration__in_seconds_\
+1 5/22/2025 20:51:37 5/22/2025 20:58:47      0      100                   429\
+2 5/28/2025 19:27:42 5/28/2025 19:33:27      0      100                   345\
+3 5/29/2025 16:33:30 5/29/2025 16:37:15      0      100                   224\
+4 5/22/2025 20:51:00 5/22/2025 20:54:23      0      100                   203\
+5 5/22/2025 22:05:06 5/22/2025 22:11:47      0      100                   401\
+6 5/26/2025 17:35:23 5/26/2025 17:40:12      0      100                   288\
+  Finished       RecordedDate        ResponseId DistributionChannel UserLanguage\
+1        1 5/22/2025 20:58:48 R_9uPeqrrnTInYy6W           anonymous        EN-GB\
+2        1 5/28/2025 19:33:28 R_2v19wk5qRLyEXh6           anonymous        EN-GB\
+3        1 5/29/2025 16:37:15 R_8cUOhKBBTbeWezh           anonymous        EN-GB\
+4        1 5/22/2025 20:54:24 R_2HuJBIsZmnBnsmz           anonymous        EN-GB\
+5        1 5/22/2025 22:11:47 R_8mPD3EK8GfJumnD           anonymous        EN-GB\
+6        1 5/26/2025 17:40:12 R_2qvOQJDwBuPWeYj           anonymous        EN-GB\
+  Q_RecaptchaScore Consent AC1 LoF_Depression_1 LoF_Depression_2 LoF_Depression_3\
+1              0.9       1   9               NA                1                1\
+2              0.7       1   9               NA                1                1\
+3              0.9       1   9               NA                1               NA\
+4              0.9       1   9               NA               NA                1\
+5              0.7       1   9               NA               NA               NA\
+6              0.9       1   9               NA                1                1\
+  LoF_Depression_4 LoF_Depression_5 LoF_Depression_6 LoF_Depression_7\
+1               NA                1               NA               NA\
+2                1                1                1               NA\
+3               NA                1               NA               NA\
+4                1               NA               NA               NA\
+5               NA               NA                1               NA\
+6                1               NA                1                1\
+  LoF_Depression_8 LoF_Depression_9 LoF_Depression_10 LoF_Depression_11\
+1               NA               NA                NA                NA\
+2                1                1                 1                NA\
+3               NA               NA                NA                NA\
+4               NA               NA                NA                 1\
+5               NA               NA                NA                NA\
+6                1                1                 1                NA\
+  LoF_Depression_0 LoF_Epilepsy_1 LoF_Epilepsy_2 LoF_Epilepsy_3 LoF_Epilepsy_4\
+1               NA              1             NA             NA             NA\
+2               NA             NA              1              1             NA\
+3               NA              1             NA             NA             NA\
+4               NA              1             NA             NA             NA\
+5               NA              1             NA             NA             NA\
+6               NA             NA              1             NA             NA\
+  LoF_Epilepsy_5 LoF_Epilepsy_6 LoF_Epilepsy_7 LoF_Epilepsy_8 LoF_Epilepsy_9\
+1             NA             NA             NA             NA             NA\
+2              1             NA             NA             NA             NA\
+3             NA             NA             NA             NA             NA\
+4             NA             NA             NA             NA             NA\
+5             NA             NA             NA             NA             NA\
+6              1             NA             NA              1             NA\
+  LoF_Epilepsy_10 LoF_Epilepsy_11 LoF_Epilepsy_0 EK_Q1 EK_Q2 EK_Q3 EK_Q4 EK_Q5 DK_Q1\
+1              NA              NA             NA     0     0     0     1     0     0\
+2              NA              NA             NA     1     0     1     0     0     0\
+3              NA              NA             NA     0     0     1     1     0     0\
+4              NA              NA             NA     1     0     0     1     0     0\
+5              NA              NA             NA     1     0     0     0     0     0\
+6              NA              NA             NA     1     0     1     0     0     1\
+  DK_Q2 DK_Q3 DK_Q4 DK_Q5 AQ_Pity AQ_Danger AQ_Fear AQ_Blame AQ_Anger AQ_No_Help\
+1     1     1     1     1       8         2       2        2        2          2\
+2     3     1     2     1       8         3       2        1        1          2\
+3     1     1     2     1       4         3       2        1        2          5\
+4     2     1     2     1       9         1       1        1        1          1\
+5     3     3     2     1       6         2       2        2        2          3\
+6     2     1     2     1       1         5       1        1        1          1\
+  AQ_Coercion AC2 SDS_Neighbour SDS_Socialise SDS_Friends SDS_Work SDS_Marry SDS_Rent\
+1           2   9             2             2           2        2         3        2\
+2           5   9             2             2           2        2         2        2\
+3           5   9             2             2           2        2         2        2\
+4           5   9             1             1           1        1         1        1\
+5           7   9             2             2           2        3         3        3\
+6           9   9             1             1           1        1         3        1\
+  SDS_Hire Age Gender Gender_TEXT AC3 Status_Employed Status_Unemployed\
+1        2   1      1               1              NA                NA\
+2        2   1      1               1               1                NA\
+3        2   1      1               1               1                NA\
+4        1   1      1               1               1                NA\
+5        3   2      1               1               1                NA\
+6        4   2      1               1               1                NA\
+  Status_Student Status_Retired Status_Other Status_PNTS Education Education_TEXT\
+1              1             NA           NA          NA         6               \
+2              1             NA           NA          NA         6               \
+3             NA             NA           NA          NA         6               \
+4             NA             NA           NA          NA         6               \
+5             NA             NA           NA          NA         6               \
+6             NA             NA           NA          NA         6               \
+  UK_Resident NonUK_Resident EKT DKT AQT SDST ACT    Source              Vignette\
+1           0             NA   1   2  20   15   3 Interpals            Depression\
+2           1             NA   2   3  22   14   3     Flyer              Epilepsy\
+3           1             NA   2   3  22   14   3    Reddit               Control\
+4           1             NA   2   4  19    7   3 Interpals               Control\
+5           1             NA   1   2  24   18   3 Interpals            Depression\
+6           1             NA   2   5  19   12   3     Flyer Epilepsy & Depression\
+  Create_a_New_Field_or_Choose_from_the_Drop_down... Q_UnansweredPercentage\
+1                                                 NA                      0\
+2                                                 NA                      0\
+3                                                 NA                      0\
+4                                                 NA                      0\
+5                                                 NA                      0\
+6                                                 NA                      0\
+  Q_UnansweredQuestions Epilepsy_Condition Depression_Condition SDS_Total_pSM\
+1                    NA                  0                    1      19.04762\
+2                    NA                  1                    0      16.66667\
+3                    NA                  0                    0      16.66667\
+4                    NA                  0                    0       0.00000\
+5                    NA                  0                    1      26.19048\
+6                    NA                  1                    1      11.90476\
+  AQ_Total_pSM LoF_Depression_Total LoF_Epilepsy_Total Has_Depression_Self\
+1     23.21429                    5                  1                   0\
+2     26.78571                   10                  5                   0\
+3     26.78571                    5                  1                   0\
+4     21.42857                   11                  1                   1\
+5     30.35714                    6                  1                   0\
+6     21.42857                   10                  8                   0\
+  Has_Epilepsy_Self  AQ_Resid SDS_Resid AQ_Total_pSM_sqrt AQT_sqrt AQ_swrt_RES\
+1                 0 -6.018519  4.100529          4.818121 4.472136  -0.2993571\
+2                 0  3.538961  8.874459          5.175492 4.690416   0.2753938\
+3                 0 14.925876 11.545373          5.175492 4.690416   1.0522876\
+4                 0  9.568733 -5.121294          4.629100 4.358899   0.7207708\
+5                 0  1.124339 11.243386          5.509732 4.898979   0.1274864\
+6                 0 -2.910053  1.631393          4.629100 4.358899  -0.1138200\
+  SDST_log10 SDST_sqrt Employment_Status_Single VignetteAR Control_D Depression_D\
+1   1.204120  3.872983                        1          2         0            1\
+2   1.176091  3.741657                        1          3         0            0\
+3   1.176091  3.741657                        3          1         1            0\
+4   0.903090  2.645751                        3          1         1            0\
+5   1.278754  4.242641                        3          2         0            1\
+6   1.113943  3.464102                        3          4         0            0\
+  Epilepsy_D Both_D Gender_Recoded Gender_reRE\
+1          0      0              1           1\
+2          1      0              1           1\
+3          0      0              1           1\
+4          0      0              1           1\
+5          0      0              1           1\
+6          0      1              1           1\
+> # Print the structure of the data frame to understand column types\
+> print("Structure of survey_data:")\
+[1] "Structure of survey_data:"\
+> str(survey_data) # Using str() for more detailed output than print(str())\
+'data.frame':	209 obs. of  109 variables:\
+ $ StartDate                                         : chr  "5/22/2025 20:51:37" "5/28/2025 19:27:42" "5/29/2025 16:33:30" "5/22/2025 20:51:00" ...\
+ $ EndDate                                           : chr  "5/22/2025 20:58:47" "5/28/2025 19:33:27" "5/29/2025 16:37:15" "5/22/2025 20:54:23" ...\
+ $ Status                                            : int  0 0 0 0 0 0 0 0 0 0 ...\
+ $ Progress                                          : int  100 100 100 100 100 100 100 100 100 100 ...\
+ $ Duration__in_seconds_                             : int  429 345 224 203 401 288 461 450 552 300 ...\
+ $ Finished                                          : int  1 1 1 1 1 1 1 1 1 1 ...\
+ $ RecordedDate                                      : chr  "5/22/2025 20:58:48" "5/28/2025 19:33:28" "5/29/2025 16:37:15" "5/22/2025 20:54:24" ...\
+ $ ResponseId                                        : chr  "R_9uPeqrrnTInYy6W" "R_2v19wk5qRLyEXh6" "R_8cUOhKBBTbeWezh" "R_2HuJBIsZmnBnsmz" ...\
+ $ DistributionChannel                               : chr  "anonymous" "anonymous" "anonymous" "anonymous" ...\
+ $ UserLanguage                                      : chr  "EN-GB" "EN-GB" "EN-GB" "EN-GB" ...\
+ $ Q_RecaptchaScore                                  : num  0.9 0.7 0.9 0.9 0.7 ...\
+ $ Consent                                           : int  1 1 1 1 1 1 1 1 1 1 ...\
+ $ AC1                                               : int  9 9 9 9 9 9 9 9 9 9 ...\
+ $ LoF_Depression_1                                  : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ LoF_Depression_2                                  : int  1 1 1 NA NA 1 NA 1 1 1 ...\
+ $ LoF_Depression_3                                  : int  1 1 NA 1 NA 1 NA 1 1 1 ...\
+ $ LoF_Depression_4                                  : int  NA 1 NA 1 NA 1 NA 1 NA 1 ...\
+ $ LoF_Depression_5                                  : int  1 1 1 NA NA NA 1 NA NA 1 ...\
+ $ LoF_Depression_6                                  : int  NA 1 NA NA 1 1 NA 1 NA 1 ...\
+ $ LoF_Depression_7                                  : int  NA NA NA NA NA 1 NA NA NA NA ...\
+ $ LoF_Depression_8                                  : int  NA 1 NA NA NA 1 1 NA 1 NA ...\
+ $ LoF_Depression_9                                  : int  NA 1 NA NA NA 1 1 1 NA NA ...\
+ $ LoF_Depression_10                                 : int  NA 1 NA NA NA 1 NA NA 1 NA ...\
+ $ LoF_Depression_11                                 : int  NA NA NA 1 NA NA NA 1 1 1 ...\
+ $ LoF_Depression_0                                  : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ LoF_Epilepsy_1                                    : int  1 NA 1 1 1 NA NA NA 1 1 ...\
+ $ LoF_Epilepsy_2                                    : int  NA 1 NA NA NA 1 NA 1 NA NA ...\
+ $ LoF_Epilepsy_3                                    : int  NA 1 NA NA NA NA NA 1 NA NA ...\
+ $ LoF_Epilepsy_4                                    : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ LoF_Epilepsy_5                                    : int  NA 1 NA NA NA 1 NA NA NA NA ...\
+ $ LoF_Epilepsy_6                                    : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ LoF_Epilepsy_7                                    : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ LoF_Epilepsy_8                                    : int  NA NA NA NA NA 1 NA NA NA NA ...\
+ $ LoF_Epilepsy_9                                    : int  NA NA NA NA NA NA 1 NA NA NA ...\
+ $ LoF_Epilepsy_10                                   : int  NA NA NA NA NA NA 1 NA NA NA ...\
+ $ LoF_Epilepsy_11                                   : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ LoF_Epilepsy_0                                    : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ EK_Q1                                             : int  0 1 0 1 1 1 1 1 1 0 ...\
+ $ EK_Q2                                             : int  0 0 0 0 0 0 1 0 0 0 ...\
+ $ EK_Q3                                             : int  0 1 1 0 0 1 1 1 1 0 ...\
+ $ EK_Q4                                             : int  1 0 1 1 0 0 0 0 1 0 ...\
+ $ EK_Q5                                             : int  0 0 0 0 0 0 0 1 1 0 ...\
+ $ DK_Q1                                             : int  0 0 0 0 0 1 0 0 1 0 ...\
+ $ DK_Q2                                             : int  1 3 1 2 3 2 3 2 2 3 ...\
+ $ DK_Q3                                             : int  1 1 1 1 3 1 1 3 1 1 ...\
+ $ DK_Q4                                             : int  1 2 2 2 2 2 3 3 2 3 ...\
+ $ DK_Q5                                             : int  1 1 1 1 1 1 1 1 1 1 ...\
+ $ AQ_Pity                                           : int  8 8 4 9 6 1 7 1 8 8 ...\
+ $ AQ_Danger                                         : int  2 3 3 1 2 5 1 1 2 1 ...\
+ $ AQ_Fear                                           : int  2 2 2 1 2 1 1 1 3 1 ...\
+ $ AQ_Blame                                          : int  2 1 1 1 2 1 1 2 2 1 ...\
+ $ AQ_Anger                                          : int  2 1 2 1 2 1 1 1 1 1 ...\
+ $ AQ_No_Help                                        : int  2 2 5 1 3 1 9 3 7 3 ...\
+ $ AQ_Coercion                                       : int  2 5 5 5 7 9 1 1 5 1 ...\
+ $ AC2                                               : int  9 9 9 9 9 9 9 9 9 9 ...\
+ $ SDS_Neighbour                                     : int  2 2 2 1 2 1 1 2 2 1 ...\
+ $ SDS_Socialise                                     : int  2 2 2 1 2 1 1 2 1 1 ...\
+ $ SDS_Friends                                       : int  2 2 2 1 2 1 1 2 1 1 ...\
+ $ SDS_Work                                          : int  2 2 2 1 3 1 1 2 2 1 ...\
+ $ SDS_Marry                                         : int  3 2 2 1 3 3 1 2 2 2 ...\
+ $ SDS_Rent                                          : int  2 2 2 1 3 1 1 2 2 2 ...\
+ $ SDS_Hire                                          : int  2 2 2 1 3 4 1 2 3 2 ...\
+ $ Age                                               : int  1 1 1 1 2 2 2 2 2 2 ...\
+ $ Gender                                            : int  1 1 1 1 1 1 1 1 1 1 ...\
+ $ Gender_TEXT                                       : chr  " " " " " " " " ...\
+ $ AC3                                               : int  1 1 1 1 1 1 1 1 1 1 ...\
+ $ Status_Employed                                   : int  NA 1 1 1 1 1 1 NA 1 1 ...\
+ $ Status_Unemployed                                 : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ Status_Student                                    : int  1 1 NA NA NA NA NA 1 NA NA ...\
+ $ Status_Retired                                    : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ Status_Other                                      : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ Status_PNTS                                       : logi  NA NA NA NA NA NA ...\
+ $ Education                                         : int  6 6 6 6 6 6 6 6 6 6 ...\
+ $ Education_TEXT                                    : chr  " " " " " " " " ...\
+ $ UK_Resident                                       : int  0 1 1 1 1 1 1 1 1 1 ...\
+ $ NonUK_Resident                                    : int  NA NA NA NA NA NA NA NA NA NA ...\
+ $ EKT                                               : int  1 2 2 2 1 2 3 3 4 0 ...\
+ $ DKT                                               : int  2 3 3 4 2 5 2 2 5 2 ...\
+ $ AQT                                               : int  20 22 22 19 24 19 21 10 28 16 ...\
+ $ SDST                                              : int  15 14 14 7 18 12 7 14 13 10 ...\
+ $ ACT                                               : int  3 3 3 3 3 3 3 3 3 3 ...\
+ $ Source                                            : chr  "Interpals" "Flyer" "Reddit" "Interpals" ...\
+ $ Vignette                                          : chr  "Depression" "Epilepsy" "Control" "Control" ...\
+ $ Create_a_New_Field_or_Choose_from_the_Drop_down...: logi  NA NA NA NA NA NA ...\
+ $ Q_UnansweredPercentage                            : int  0 0 0 0 0 0 0 0 0 0 ...\
+ $ Q_UnansweredQuestions                             : logi  NA NA NA NA NA NA ...\
+ $ Epilepsy_Condition                                : int  0 1 0 0 0 1 0 0 0 1 ...\
+ $ Depression_Condition                              : int  1 0 0 0 1 1 0 0 1 0 ...\
+ $ SDS_Total_pSM                                     : num  19 16.7 16.7 0 26.2 ...\
+ $ AQ_Total_pSM                                      : num  23.2 26.8 26.8 21.4 30.4 ...\
+ $ LoF_Depression_Total                              : int  5 10 5 11 6 10 9 11 11 11 ...\
+ $ LoF_Epilepsy_Total                                : int  1 5 1 1 1 8 10 3 1 1 ...\
+ $ Has_Depression_Self                               : int  0 0 0 1 0 0 0 1 1 1 ...\
+ $ Has_Epilepsy_Self                                 : int  0 0 0 0 0 0 0 0 0 0 ...\
+ $ AQ_Resid                                          : num  -6.02 3.54 14.93 9.57 1.12 ...\
+ $ SDS_Resid                                         : num  4.1 8.87 11.55 -5.12 11.24 ...\
+ $ AQ_Total_pSM_sqrt                                 : num  4.82 5.18 5.18 4.63 5.51 ...\
+ $ AQT_sqrt                                          : num  4.47 4.69 4.69 4.36 4.9 ...\
+ $ AQ_swrt_RES                                       : num  -0.299 0.275 1.052 0.721 0.127 ...\
+  [list output truncated]\
+> # --- III. DATA PREPROCESSING ---\
+> print("--- III. DATA PREPROCESSING ---")\
+[1] "--- III. DATA PREPROCESSING ---"\
+> # 1. Convert Independent Variables to Factors\
+> # These columns define the experimental conditions/groups.\
+> print("Converting Epilepsy_Condition and Depression_Condition to factors...")\
+[1] "Converting Epilepsy_Condition and Depression_Condition to factors..."\
+> survey_data$Epilepsy_Condition <- factor(survey_data$Epilepsy_Condition,\
++                                          levels = c(0, 1),\
++                                          labels = c("Absent", "Present"))\
+> survey_data$Depression_Condition <- factor(survey_data$Depression_Condition,\
++                                            levels = c(0, 1),\
++                                            labels = c("Absent", "Present"))\
+> print("Factor conversion complete.")\
+[1] "Factor conversion complete."\
+> # 2. Verify Numeric Types for Key Outcome and Predictor Variables\
+> # List all variables that are expected to be numeric for analyses.\
+> # This includes total scores, knowledge scores, familiarity scores, and individual items for reliability.\
+> # Note: Individual items for reliability are checked again within that section.\
+> print("Verifying numeric types for key variables...")\
+[1] "Verifying numeric types for key variables..."\
+> key_analysis_vars <- c("AQ_Total_pSM", "SDS_Total_pSM", "SDST", \
++                        "LoF_Depression_Total", "LoF_Epilepsy_Total", \
++                        "EKT", "DKT", "AQ_Total_pSM_sqrt") \
+> for (var_name in key_analysis_vars) \{\
++   if (var_name %in% names(survey_data)) \{\
++     if (!is.numeric(survey_data[[var_name]])) \{\
++       print(paste("Warning:", var_name, "is not numeric, its class is:", class(survey_data[[var_name]]), "- attempting conversion if it's a factor that looks numeric."))\
++       # Attempt conversion for factors that might represent numbers\
++       if(is.factor(survey_data[[var_name]]))\{\
++         survey_data[[var_name]] <- as.numeric(as.character(survey_data[[var_name]]))\
++         if(is.numeric(survey_data[[var_name]])) print(paste("Successfully converted", var_name, "to numeric."))\
++         else print(paste("Failed to convert", var_name, "to numeric after factor conversion attempt."))\
++       \}\
++     \} else \{\
++       print(paste(var_name, "is numeric (class:", class(survey_data[[var_name]]), ")."))\
++     \}\
++   \} else \{\
++     # AQ_Total_pSM_sqrt might be created by the user or is not used if AQ-7 is non-parametric.\
++     if(var_name != "AQ_Total_pSM_sqrt")\{ \
++       print(paste("Warning:", var_name, "not found in dataset. Analyses relying on it may fail or be skipped."))\
++     \} else \{\
++       print(paste(var_name, "not found. It's expected to be used for AQ-7 parametric analysis. Ensure it's created if needed."))\
++     \}\
++   \}\
++ \}\
+[1] "AQ_Total_pSM is numeric (class: numeric )."\
+[1] "SDS_Total_pSM is numeric (class: numeric )."\
+[1] "SDST is numeric (class: integer )."\
+[1] "LoF_Depression_Total is numeric (class: integer )."\
+[1] "LoF_Epilepsy_Total is numeric (class: integer )."\
+[1] "EKT is numeric (class: integer )."\
+[1] "DKT is numeric (class: integer )."\
+[1] "AQ_Total_pSM_sqrt is numeric (class: numeric )."\
+> print("Numeric type verification complete.")\
+[1] "Numeric type verification complete."\
+> # 3. Create Combined Vignette Group Factor\
+> # This factor represents the four experimental conditions based on Epilepsy and Depression status.\
+> print("Creating VignetteGroup factor...")\
+[1] "Creating VignetteGroup factor..."\
+> survey_data <- survey_data %>%\
++   mutate(\
++     VignetteGroup = case_when(\
++       Epilepsy_Condition == "Absent" & Depression_Condition == "Absent" ~ "Control",\
++       Epilepsy_Condition == "Present" & Depression_Condition == "Absent" ~ "EpilepsyOnly",\
++       Epilepsy_Condition == "Absent" & Depression_Condition == "Present" ~ "DepressionOnly",\
++       Epilepsy_Condition == "Present" & Depression_Condition == "Present" ~ "Comorbid",\
++       TRUE ~ NA_character_ # Catch any combinations not explicitly defined\
++     )\
++   )\
+> # Set a logical order for levels, useful for tables and plots.\
+> survey_data$VignetteGroup <- factor(survey_data$VignetteGroup,\
++                                     levels = c("Control", "EpilepsyOnly", "DepressionOnly", "Comorbid"))\
+> print("VignetteGroup factor created.")\
+[1] "VignetteGroup factor created."\
+> # 4. Print Verification of Preprocessing\
+> print("Verifying preprocessing steps:")\
+[1] "Verifying preprocessing steps:"\
+> print("Structure of Epilepsy_Condition:"); print(str(survey_data$Epilepsy_Condition))\
+[1] "Structure of Epilepsy_Condition:"\
+ Factor w/ 2 levels "Absent","Present": 1 2 1 1 1 2 1 1 1 2 ...\
+NULL\
+> print("Structure of Depression_Condition:"); print(str(survey_data$Depression_Condition))\
+[1] "Structure of Depression_Condition:"\
+ Factor w/ 2 levels "Absent","Present": 2 1 1 1 2 2 1 1 2 1 ...\
+NULL\
+> print("Structure of VignetteGroup:"); print(str(survey_data$VignetteGroup))\
+[1] "Structure of VignetteGroup:"\
+ Factor w/ 4 levels "Control","EpilepsyOnly",..: 3 2 1 1 3 4 1 1 3 2 ...\
+NULL\
+> print("Levels of VignetteGroup:"); print(levels(survey_data$VignetteGroup))\
+[1] "Levels of VignetteGroup:"\
+[1] "Control"        "EpilepsyOnly"   "DepressionOnly" "Comorbid"      \
+> print("Head of survey_data with new VignetteGroup column:")\
+[1] "Head of survey_data with new VignetteGroup column:"\
+> print(head(survey_data))\
+           StartDate            EndDate Status Progress Duration__in_seconds_\
+1 5/22/2025 20:51:37 5/22/2025 20:58:47      0      100                   429\
+2 5/28/2025 19:27:42 5/28/2025 19:33:27      0      100                   345\
+3 5/29/2025 16:33:30 5/29/2025 16:37:15      0      100                   224\
+4 5/22/2025 20:51:00 5/22/2025 20:54:23      0      100                   203\
+5 5/22/2025 22:05:06 5/22/2025 22:11:47      0      100                   401\
+6 5/26/2025 17:35:23 5/26/2025 17:40:12      0      100                   288\
+  Finished       RecordedDate        ResponseId DistributionChannel UserLanguage\
+1        1 5/22/2025 20:58:48 R_9uPeqrrnTInYy6W           anonymous        EN-GB\
+2        1 5/28/2025 19:33:28 R_2v19wk5qRLyEXh6           anonymous        EN-GB\
+3        1 5/29/2025 16:37:15 R_8cUOhKBBTbeWezh           anonymous        EN-GB\
+4        1 5/22/2025 20:54:24 R_2HuJBIsZmnBnsmz           anonymous        EN-GB\
+5        1 5/22/2025 22:11:47 R_8mPD3EK8GfJumnD           anonymous        EN-GB\
+6        1 5/26/2025 17:40:12 R_2qvOQJDwBuPWeYj           anonymous        EN-GB\
+  Q_RecaptchaScore Consent AC1 LoF_Depression_1 LoF_Depression_2 LoF_Depression_3\
+1              0.9       1   9               NA                1                1\
+2              0.7       1   9               NA                1                1\
+3              0.9       1   9               NA                1               NA\
+4              0.9       1   9               NA               NA                1\
+5              0.7       1   9               NA               NA               NA\
+6              0.9       1   9               NA                1                1\
+  LoF_Depression_4 LoF_Depression_5 LoF_Depression_6 LoF_Depression_7\
+1               NA                1               NA               NA\
+2                1                1                1               NA\
+3               NA                1               NA               NA\
+4                1               NA               NA               NA\
+5               NA               NA                1               NA\
+6                1               NA                1                1\
+  LoF_Depression_8 LoF_Depression_9 LoF_Depression_10 LoF_Depression_11\
+1               NA               NA                NA                NA\
+2                1                1                 1                NA\
+3               NA               NA                NA                NA\
+4               NA               NA                NA                 1\
+5               NA               NA                NA                NA\
+6                1                1                 1                NA\
+  LoF_Depression_0 LoF_Epilepsy_1 LoF_Epilepsy_2 LoF_Epilepsy_3 LoF_Epilepsy_4\
+1               NA              1             NA             NA             NA\
+2               NA             NA              1              1             NA\
+3               NA              1             NA             NA             NA\
+4               NA              1             NA             NA             NA\
+5               NA              1             NA             NA             NA\
+6               NA             NA              1             NA             NA\
+  LoF_Epilepsy_5 LoF_Epilepsy_6 LoF_Epilepsy_7 LoF_Epilepsy_8 LoF_Epilepsy_9\
+1             NA             NA             NA             NA             NA\
+2              1             NA             NA             NA             NA\
+3             NA             NA             NA             NA             NA\
+4             NA             NA             NA             NA             NA\
+5             NA             NA             NA             NA             NA\
+6              1             NA             NA              1             NA\
+  LoF_Epilepsy_10 LoF_Epilepsy_11 LoF_Epilepsy_0 EK_Q1 EK_Q2 EK_Q3 EK_Q4 EK_Q5 DK_Q1\
+1              NA              NA             NA     0     0     0     1     0     0\
+2              NA              NA             NA     1     0     1     0     0     0\
+3              NA              NA             NA     0     0     1     1     0     0\
+4              NA              NA             NA     1     0     0     1     0     0\
+5              NA              NA             NA     1     0     0     0     0     0\
+6              NA              NA             NA     1     0     1     0     0     1\
+  DK_Q2 DK_Q3 DK_Q4 DK_Q5 AQ_Pity AQ_Danger AQ_Fear AQ_Blame AQ_Anger AQ_No_Help\
+1     1     1     1     1       8         2       2        2        2          2\
+2     3     1     2     1       8         3       2        1        1          2\
+3     1     1     2     1       4         3       2        1        2          5\
+4     2     1     2     1       9         1       1        1        1          1\
+5     3     3     2     1       6         2       2        2        2          3\
+6     2     1     2     1       1         5       1        1        1          1\
+  AQ_Coercion AC2 SDS_Neighbour SDS_Socialise SDS_Friends SDS_Work SDS_Marry SDS_Rent\
+1           2   9             2             2           2        2         3        2\
+2           5   9             2             2           2        2         2        2\
+3           5   9             2             2           2        2         2        2\
+4           5   9             1             1           1        1         1        1\
+5           7   9             2             2           2        3         3        3\
+6           9   9             1             1           1        1         3        1\
+  SDS_Hire Age Gender Gender_TEXT AC3 Status_Employed Status_Unemployed\
+1        2   1      1               1              NA                NA\
+2        2   1      1               1               1                NA\
+3        2   1      1               1               1                NA\
+4        1   1      1               1               1                NA\
+5        3   2      1               1               1                NA\
+6        4   2      1               1               1                NA\
+  Status_Student Status_Retired Status_Other Status_PNTS Education Education_TEXT\
+1              1             NA           NA          NA         6               \
+2              1             NA           NA          NA         6               \
+3             NA             NA           NA          NA         6               \
+4             NA             NA           NA          NA         6               \
+5             NA             NA           NA          NA         6               \
+6             NA             NA           NA          NA         6               \
+  UK_Resident NonUK_Resident EKT DKT AQT SDST ACT    Source              Vignette\
+1           0             NA   1   2  20   15   3 Interpals            Depression\
+2           1             NA   2   3  22   14   3     Flyer              Epilepsy\
+3           1             NA   2   3  22   14   3    Reddit               Control\
+4           1             NA   2   4  19    7   3 Interpals               Control\
+5           1             NA   1   2  24   18   3 Interpals            Depression\
+6           1             NA   2   5  19   12   3     Flyer Epilepsy & Depression\
+  Create_a_New_Field_or_Choose_from_the_Drop_down... Q_UnansweredPercentage\
+1                                                 NA                      0\
+2                                                 NA                      0\
+3                                                 NA                      0\
+4                                                 NA                      0\
+5                                                 NA                      0\
+6                                                 NA                      0\
+  Q_UnansweredQuestions Epilepsy_Condition Depression_Condition SDS_Total_pSM\
+1                    NA             Absent              Present      19.04762\
+2                    NA            Present               Absent      16.66667\
+3                    NA             Absent               Absent      16.66667\
+4                    NA             Absent               Absent       0.00000\
+5                    NA             Absent              Present      26.19048\
+6                    NA            Present              Present      11.90476\
+  AQ_Total_pSM LoF_Depression_Total LoF_Epilepsy_Total Has_Depression_Self\
+1     23.21429                    5                  1                   0\
+2     26.78571                   10                  5                   0\
+3     26.78571                    5                  1                   0\
+4     21.42857                   11                  1                   1\
+5     30.35714                    6                  1                   0\
+6     21.42857                   10                  8                   0\
+  Has_Epilepsy_Self  AQ_Resid SDS_Resid AQ_Total_pSM_sqrt AQT_sqrt AQ_swrt_RES\
+1                 0 -6.018519  4.100529          4.818121 4.472136  -0.2993571\
+2                 0  3.538961  8.874459          5.175492 4.690416   0.2753938\
+3                 0 14.925876 11.545373          5.175492 4.690416   1.0522876\
+4                 0  9.568733 -5.121294          4.629100 4.358899   0.7207708\
+5                 0  1.124339 11.243386          5.509732 4.898979   0.1274864\
+6                 0 -2.910053  1.631393          4.629100 4.358899  -0.1138200\
+  SDST_log10 SDST_sqrt Employment_Status_Single VignetteAR Control_D Depression_D\
+1   1.204120  3.872983                        1          2         0            1\
+2   1.176091  3.741657                        1          3         0            0\
+3   1.176091  3.741657                        3          1         1            0\
+4   0.903090  2.645751                        3          1         1            0\
+5   1.278754  4.242641                        3          2         0            1\
+6   1.113943  3.464102                        3          4         0            0\
+  Epilepsy_D Both_D Gender_Recoded Gender_reRE  VignetteGroup\
+1          0      0              1           1 DepressionOnly\
+2          1      0              1           1   EpilepsyOnly\
+3          0      0              1           1        Control\
+4          0      0              1           1        Control\
+5          0      0              1           1 DepressionOnly\
+6          0      1              1           1       Comorbid\
+> print("Summary of key numeric variables after potential conversions:")\
+[1] "Summary of key numeric variables after potential conversions:"\
+> # Select only variables that actually exist in survey_data to avoid errors in summary\
+> existing_key_analysis_vars <- intersect(key_analysis_vars, names(survey_data))\
+> if(length(existing_key_analysis_vars) > 0) \{\
++   print(summary(survey_data[existing_key_analysis_vars]))\
++ \} else \{\
++   print("None of the specified key numeric variables were found for summary.")\
++ \}\
+  AQ_Total_pSM   SDS_Total_pSM         SDST       LoF_Depression_Total\
+ Min.   : 0.00   Min.   : 0.000   Min.   : 7.00   Min.   : 1.000      \
+ 1st Qu.:12.50   1st Qu.: 0.000   1st Qu.: 7.00   1st Qu.: 9.000      \
+ Median :19.64   Median : 7.143   Median :10.00   Median :11.000      \
+ Mean   :22.15   Mean   : 9.592   Mean   :11.03   Mean   : 9.688      \
+ 3rd Qu.:28.57   3rd Qu.:16.667   3rd Qu.:14.00   3rd Qu.:11.000      \
+ Max.   :67.86   Max.   :35.714   Max.   :22.00   Max.   :11.000      \
+                                                  NA's   :4           \
+ LoF_Epilepsy_Total      EKT             DKT        AQ_Total_pSM_sqrt\
+ Min.   : 1.000     Min.   :0.000   Min.   :0.000   Min.   :0.000    \
+ 1st Qu.: 2.000     1st Qu.:2.000   1st Qu.:3.000   1st Qu.:3.536    \
+ Median : 4.000     Median :2.000   Median :4.000   Median :4.432    \
+ Mean   : 4.811     Mean   :2.483   Mean   :3.545   Mean   :4.406    \
+ 3rd Qu.: 8.000     3rd Qu.:3.000   3rd Qu.:4.000   3rd Qu.:5.345    \
+ Max.   :11.000     Max.   :5.000   Max.   :5.000   Max.   :8.238    \
+ NA's   :3                                                           \
+> print("Preprocessing verification complete.")\
+[1] "Preprocessing verification complete."\
+> # --- IV. ANALYSIS FOR AQ-7 SCORES (Hypotheses H1a, H2a) ---\
+> # This section analyzes attitudes (AQ-7 scores, possibly sqrt-transformed).\
+> # H1a: Comorbid condition will elicit more negative attitudes than epilepsy-only.\
+> # H2a: Interaction effect - depression will exacerbate negative attitudes towards epilepsy.\
+> print("--- IV. ANALYSIS FOR AQ-7 SCORES (Hypotheses H1a, H2a) ---")\
+[1] "--- IV. ANALYSIS FOR AQ-7 SCORES (Hypotheses H1a, H2a) ---"\
+> # Ensure AQ_Total_pSM_sqrt exists and is numeric before proceeding with parametric tests.\
+> # If AQ_Total_pSM_sqrt is not available/suitable, non-parametric tests on AQ_Total_pSM might be an alternative (not scripted here).\
+> if (!"AQ_Total_pSM_sqrt" %in% names(survey_data)) \{\
++   print("Warning: AQ_Total_pSM_sqrt column not found. Skipping parametric AQ-7 analysis (ANOVA). Consider creating this column or using non-parametric alternatives.")\
++ \} else if (!is.numeric(survey_data$AQ_Total_pSM_sqrt)) \{\
++   print("Warning: AQ_Total_pSM_sqrt column is not numeric. Skipping parametric AQ-7 analysis (ANOVA).")\
++ \} else if (!all(c("Epilepsy_Condition", "Depression_Condition") %in% names(survey_data))) \{\
++   print("Warning: Epilepsy_Condition or Depression_Condition not found. Skipping AQ-7 ANOVA.")\
++ \} else \{\
++   print("Proceeding with Two-Way ANOVA for AQ-7 scores (using AQ_Total_pSM_sqrt).")\
++   \
++   # 1. Define the ANOVA Model for AQ-7\
++   aq_anova_model <- lm(AQ_Total_pSM_sqrt ~ Epilepsy_Condition * Depression_Condition, data = survey_data)\
++   print("ANOVA model for AQ-7 defined (AQ_Total_pSM_sqrt ~ Epilepsy_Condition * Depression_Condition).")\
++   \
++   # 2. Check ANOVA Assumptions\
++   # It's crucial to check these assumptions to ensure the validity of the ANOVA results.\
++   print("Checking ANOVA assumptions for AQ-7 model:")\
++   # Normality of Residuals\
++   print("Shapiro-Wilk normality test for residuals (p > 0.05 suggests normality):")\
++   if(length(residuals(aq_anova_model)) >= 3 && length(residuals(aq_anova_model)) <= 5000) \{\
++     shapiro_test_aq <- shapiro.test(residuals(aq_anova_model))\
++     print(shapiro_test_aq)\
++   \} else \{\
++     print(paste("Residuals length (", length(residuals(aq_anova_model)), ") out of bounds for Shapiro-Wilk test (3-5000 samples). Consider visual inspection (QQ plot) or other normality tests."))\
++   \}\
++   print("QQ plot for residuals (points should ideally fall along the line):")\
++   qqnorm(residuals(aq_anova_model)); qqline(residuals(aq_anova_model))\
++   \
++   # Homogeneity of Variances (Levene's Test)\
++   print("Levene's Test for homogeneity of variances (p > 0.05 suggests homogeneity):")\
++   # VignetteGroup can also be used here if preferred: leveneTest(AQ_Total_pSM_sqrt ~ VignetteGroup, data = survey_data)\
++   levene_test_aq <- car::leveneTest(AQ_Total_pSM_sqrt ~ Epilepsy_Condition * Depression_Condition, data = survey_data, center = mean)\
++   print(levene_test_aq)\
++   \
++   # 3. Perform and Report Two-Way ANOVA\
++   # Type III Sum of Squares is used due to the interaction term and potentially unbalanced design.\
++   print("Performing Two-Way ANOVA for AQ-7 (Type III SS):")\
++   Anova_results_aq <- car::Anova(aq_anova_model, type = "III")\
++   print(Anova_results_aq)\
++   # Interpretation: Look at Pr(>F) values. p < 0.05 indicates a significant effect.\
++   # Main effects (Epilepsy_Condition, Depression_Condition) should be interpreted cautiously if the interaction is significant.\
++   # Interaction (Epilepsy_Condition:Depression_Condition) tests H2a.\
++   \
++   print("Partial Eta Squared for AQ-7 ANOVA (effect sizes):")\
++   eta_squared_aq <- effectsize::eta_squared(Anova_results_aq, partial = TRUE)\
++   print(eta_squared_aq) # Indicates proportion of variance explained.\
++   \
++   # 4. Post-Hoc Tests (if interaction or main effects are significant)\
++   # Typically, if the interaction is significant, post-hoc tests explore comparisons across the combined groups (VignetteGroup).\
++   # If interaction is not significant, post-hocs might be run for significant main effects.\
++   print("Post-hoc tests for AQ-7:")\
++   print("Run these considering significance of ANOVA results. E.g., if interaction is significant (p < .05), explore it.")\
++   \
++   # Using emmeans for interaction contrasts (compares levels of one factor at each level of the other)\
++   emmeans_aq_interaction <- emmeans::emmeans(aq_anova_model, ~ Epilepsy_Condition * Depression_Condition)\
++   print("Estimated marginal means from interaction model (AQ-7):")\
++   print(emmeans_aq_interaction)\
++   print("Pairwise comparisons for the interaction (AQ-7, Tukey adjusted):")\
++   # These pairs help understand the nature of the interaction.\
++   # E.g., (Epilepsy:Present, Depression:Present) vs (Epilepsy:Present, Depression:Absent) for H1a.\
++   pairs_aq_interaction <- pairs(emmeans_aq_interaction, adjust = "tukey")\
++   print(pairs_aq_interaction)\
++   \
++   # Alternative/additional post-hoc: Tukey HSD on VignetteGroup if interaction is significant\
++   # This compares all four vignette groups directly.\
++   if("VignetteGroup" %in% names(survey_data) && "AQ_Total_pSM_sqrt" %in% names(survey_data))\{\
++     print("Tukey HSD using rstatix with VignetteGroup (AQ-7, if interaction significant):")\
++     tukey_aq_vignette <- rstatix::tukey_hsd(survey_data, AQ_Total_pSM_sqrt ~ VignetteGroup)\
++     print(tukey_aq_vignette)\
++     # For H1a: Look for "Comorbid" vs "EpilepsyOnly". p.adj < 0.05 indicates significance.\
++   \}\
++   \
++   # 5. Descriptive Statistics for AQ-7 (Means and SDs by VignetteGroup)\
++   print("Descriptive statistics for AQ_Total_pSM_sqrt by VignetteGroup:")\
++   if("VignetteGroup" %in% names(survey_data) && "AQ_Total_pSM_sqrt" %in% names(survey_data))\{\
++     descriptive_stats_aq <- survey_data %>%\
++       group_by(VignetteGroup) %>%\
++       summarise(\
++         mean_AQ_sqrt = mean(AQ_Total_pSM_sqrt, na.rm = TRUE),\
++         sd_AQ_sqrt = sd(AQ_Total_pSM_sqrt, na.rm = TRUE),\
++         n = n(),\
++         .groups = 'drop'\
++       )\
++     print(descriptive_stats_aq)\
++     # Back-transform means for easier interpretation if desired:\
++     # descriptive_stats_aq$mean_AQ_original = descriptive_stats_aq$mean_AQ_sqrt^2\
++     print("Note: Means are for sqrt-transformed AQ scores. Consider back-transforming (squaring) for interpretation.")\
++   \}\
++ \}\
+[1] "Proceeding with Two-Way ANOVA for AQ-7 scores (using AQ_Total_pSM_sqrt)."\
+[1] "ANOVA model for AQ-7 defined (AQ_Total_pSM_sqrt ~ Epilepsy_Condition * Depression_Condition)."\
+[1] "Checking ANOVA assumptions for AQ-7 model:"\
+[1] "Shapiro-Wilk normality test for residuals (p > 0.05 suggests normality):"\
+\
+	Shapiro-Wilk normality test\
+\
+data:  residuals(aq_anova_model)\
+W = 0.96578, p-value = 5.963e-05\
+\
+[1] "QQ plot for residuals (points should ideally fall along the line):"\
+[1] "Levene's Test for homogeneity of variances (p > 0.05 suggests homogeneity):"\
+Levene's Test for Homogeneity of Variance (center = mean)\
+       Df F value Pr(>F)\
+group   3  0.5154 0.6721\
+      205               \
+[1] "Performing Two-Way ANOVA for AQ-7 (Type III SS):"\
+Anova Table (Type III tests)\
+\
+Response: AQ_Total_pSM_sqrt\
+                                        Sum Sq  Df F value    Pr(>F)    \
+(Intercept)                             466.78   1 221.148 < 2.2e-16 ***\
+Epilepsy_Condition                       62.79   1  29.746 1.410e-07 ***\
+Depression_Condition                    126.99   1  60.165 4.028e-13 ***\
+Epilepsy_Condition:Depression_Condition  56.92   1  26.965 4.978e-07 ***\
+Residuals                               432.69 205                      \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+[1] "Partial Eta Squared for AQ-7 ANOVA (effect sizes):"\
+Type 3 ANOVAs only give sensible and informative results when covariates are\
+  mean-centered and factors are coded with orthogonal contrasts (such as those\
+  produced by `contr.sum`, `contr.poly`, or `contr.helmert`, but *not* by the\
+  default `contr.treatment`).\
+# Effect Size for ANOVA (Type III)\
+\
+Parameter                               | Eta2 (partial) |       95% CI\
+-----------------------------------------------------------------------\
+Epilepsy_Condition                      |           0.13 | [0.06, 1.00]\
+Depression_Condition                    |           0.23 | [0.15, 1.00]\
+Epilepsy_Condition:Depression_Condition |           0.12 | [0.06, 1.00]\
+\
+- One-sided CIs: upper bound fixed at [1.00].[1] "Post-hoc tests for AQ-7:"\
+[1] "Run these considering significance of ANOVA results. E.g., if interaction is significant (p < .05), explore it."\
+[1] "Estimated marginal means from interaction model (AQ-7):"\
+ Epilepsy_Condition Depression_Condition emmean    SE  df lower.CL upper.CL\
+ Absent             Absent                 3.03 0.203 205     2.62     3.43\
+ Present            Absent                 4.59 0.203 205     4.19     5.00\
+ Absent             Present                5.24 0.200 205     4.84     5.63\
+ Present            Present                4.72 0.198 205     4.33     5.11\
+\
+Confidence level used: 0.95 \
+[1] "Pairwise comparisons for the interaction (AQ-7, Tukey adjusted):"\
+ contrast                         estimate    SE  df t.ratio p.value\
+ Absent Absent - Present Absent     -1.569 0.288 205  -5.454  <.0001\
+ Absent Absent - Absent Present     -2.210 0.285 205  -7.757  <.0001\
+ Absent Absent - Present Present    -1.692 0.284 205  -5.963  <.0001\
+ Present Absent - Absent Present    -0.641 0.285 205  -2.250  0.1134\
+ Present Absent - Present Present   -0.122 0.284 205  -0.432  0.9730\
+ Absent Present - Present Present    0.519 0.281 205   1.847  0.2544\
+\
+P value adjustment: tukey method for comparing a family of 4 estimates \
+[1] "Tukey HSD using rstatix with VignetteGroup (AQ-7, if interaction significant):"\
+# A tibble: 6 \'d7 9\
+  term      group1 group2 null.value estimate conf.low conf.high    p.adj p.adj.signif\
+* <chr>     <chr>  <chr>       <dbl>    <dbl>    <dbl>     <dbl>    <dbl> <chr>       \
+1 Vignette\'85 Contr\'85 Epile\'85          0    1.57    0.824      2.31  8.41e- 7 ****        \
+2 Vignette\'85 Contr\'85 Depre\'85          0    2.21    1.47       2.95  2.38e-12 ****        \
+3 Vignette\'85 Contr\'85 Comor\'85          0    1.69    0.957      2.43  6.40e- 8 ****        \
+4 Vignette\'85 Epile\'85 Depre\'85          0    0.641  -0.0968     1.38  1.13e- 1 ns          \
+5 Vignette\'85 Epile\'85 Comor\'85          0    0.122  -0.612      0.857 9.73e- 1 ns          \
+6 Vignette\'85 Depre\'85 Comor\'85          0   -0.519  -1.25       0.209 2.54e- 1 ns          \
+[1] "Descriptive statistics for AQ_Total_pSM_sqrt by VignetteGroup:"\
+# A tibble: 4 \'d7 4\
+  VignetteGroup  mean_AQ_sqrt sd_AQ_sqrt     n\
+  <fct>                 <dbl>      <dbl> <int>\
+1 Control                3.03       1.61    51\
+2 EpilepsyOnly           4.59       1.34    51\
+3 DepressionOnly         5.24       1.39    53\
+4 Comorbid               4.72       1.46    54\
+[1] "Note: Means are for sqrt-transformed AQ scores. Consider back-transforming (squaring) for interpretation."\
+> print("--- End of AQ-7 Score Analysis ---")\
+[1] "--- End of AQ-7 Score Analysis ---"\
+> # --- V. ANALYSIS FOR SDS SCORES (Hypotheses H1b, H2b) ---\
+> # This section analyzes social distance (SDS scores, using SDST column).\
+> # H1b: Comorbid condition will elicit greater desired social distance than epilepsy-only.\
+> # H2b: Interaction effect - depression will exacerbate desired social distance towards epilepsy.\
+> # Non-parametric tests are planned as primary due to potential non-normality of SDS scores.\
+> print("--- V. ANALYSIS FOR SDS SCORES (Hypotheses H1b, H2b) ---")\
+[1] "--- V. ANALYSIS FOR SDS SCORES (Hypotheses H1b, H2b) ---"\
+> # Ensure SDST column exists and is numeric. Also VignetteGroup for Kruskal-Wallis.\
+> if (!"SDST" %in% names(survey_data)) \{\
++   print("Warning: SDST column not found. Skipping SDS analysis.")\
++ \} else if (!is.numeric(survey_data$SDST)) \{\
++   print("Warning: SDST column is not numeric. Skipping SDS analysis.")\
++ \} else if (!"VignetteGroup" %in% names(survey_data)) \{\
++   print("Warning: VignetteGroup column not found. Skipping Kruskal-Wallis for SDS.")\
++ \} else \{\
++   print("Proceeding with analysis for SDS scores (using SDST).")\
++   \
++   # 1. Factorial ANOVA on SDS (for context/assumption check, not primary analysis)\
++   print("--- Factorial ANOVA for SDST (for context/assumption check) ---")\
++   if (all(c("Epilepsy_Condition", "Depression_Condition") %in% names(survey_data))) \{\
++     sds_anova_model <- lm(SDST ~ Epilepsy_Condition * Depression_Condition, data = survey_data)\
++     Anova_results_sds <- car::Anova(sds_anova_model, type = "III")\
++     print("ANOVA results for SDST (Type III SS):")\
++     print(Anova_results_sds)\
++     print("Partial Eta Squared for SDST ANOVA:")\
++     print(effectsize::eta_squared(Anova_results_sds, partial = TRUE))\
++     \
++     print("Shapiro-Wilk test for normality of SDST ANOVA residuals (p > 0.05 suggests normality):")\
++     if(length(residuals(sds_anova_model)) >= 3 && length(residuals(sds_anova_model)) <= 5000) \{\
++       print(shapiro.test(residuals(sds_anova_model)))\
++     \} else \{\
++       print(paste("Residuals length (", length(residuals(sds_anova_model)), ") out of bounds for Shapiro-Wilk."))\
++     \}\
++     qqnorm(residuals(sds_anova_model)); qqline(residuals(sds_anova_model))\
++     print("Levene's test for homogeneity of variances for SDST (p > 0.05 suggests homogeneity):")\
++     print(leveneTest(SDST ~ Epilepsy_Condition * Depression_Condition, data = survey_data, center = mean))\
++     print("Comment: These ANOVA assumption checks help confirm if the non-parametric approach (Kruskal-Wallis) is indeed more appropriate for SDST.")\
++   \} else \{\
++     print("Skipping Factorial ANOVA for SDST as Epilepsy_Condition or Depression_Condition not found.")\
++   \}\
++   print("--- End of Factorial ANOVA for SDST ---")\
++   \
++   # 2. Non-Parametric Test for Overall Differences (Kruskal-Wallis) - Primary Analysis for SDS\
++   print("--- Kruskal-Wallis Test for SDST by VignetteGroup (Primary Analysis) ---")\
++   kruskal_sds <- kruskal.test(SDST ~ VignetteGroup, data = survey_data)\
++   print(kruskal_sds) # p < 0.05 indicates significant differences between at least two groups.\
++   \
++   print("Eta squared for Kruskal-Wallis (SDST effect size):")\
++   # N is total sample size for eta_sq_kruskal_sds_manual <- (kruskal_sds$statistic) / ((nrow(survey_data)-1))\
++   print(rstatix::kruskal_effsize(survey_data, SDST ~ VignetteGroup, ci = FALSE)) # rstatix provides H-based eta-squared.\
++   print("--- End of Kruskal-Wallis Test ---")\
++   \
++   # 3. Pairwise Non-Parametric Post-Hoc Tests (if Kruskal-Wallis is significant)\
++   print("--- Pairwise Non-Parametric Post-Hoc Tests for SDST ---")\
++   print("Run these if Kruskal-Wallis test is significant (p < .05).")\
++   # Using `rstatix::wilcox_test` with Bonferroni correction (Mann-Whitney U-test)\
++   print("Pairwise Mann-Whitney U-tests (Wilcoxon) for SDST with Bonferroni correction:")\
++   pairwise_sds_wilcox <- rstatix::wilcox_test(survey_data, SDST ~ VignetteGroup, p.adjust.method = "bonferroni")\
++   print(pairwise_sds_wilcox)\
++   # For H1b: Look for "Comorbid" vs "EpilepsyOnly". p.adj < 0.05 indicates significance.\
++   \
++   # Alternative using `FSA::dunnTest` (Dunn's test)\
++   print("Dunn's test for SDST with Bonferroni correction:")\
++   dunn_sds <- FSA::dunnTest(SDST ~ VignetteGroup, data = survey_data, method = "bonferroni")\
++   print(dunn_sds)\
++   print("--- End of Post-Hoc Tests for SDST ---")\
++   \
++   # 4. Descriptive Statistics for SDS (Medians and IQRs by VignetteGroup)\
++   print("--- Descriptive Statistics for SDST (Median, IQR) by VignetteGroup ---")\
++   descriptive_stats_sds <- survey_data %>%\
++     group_by(VignetteGroup) %>%\
++     summarise(\
++       median_SDST = median(SDST, na.rm = TRUE),\
++       IQR_SDST = IQR(SDST, na.rm = TRUE),\
++       n = n(),\
++       .groups = 'drop'\
++     )\
++   print(descriptive_stats_sds)\
++   print("--- End of Descriptive Statistics for SDST ---")\
++ \}\
+[1] "Proceeding with analysis for SDS scores (using SDST)."\
+[1] "--- Factorial ANOVA for SDST (for context/assumption check) ---"\
+[1] "ANOVA results for SDST (Type III SS):"\
+Anova Table (Type III tests)\
+\
+Response: SDST\
+                                        Sum Sq  Df  F value    Pr(>F)    \
+(Intercept)                             4185.2   1 333.2283 < 2.2e-16 ***\
+Epilepsy_Condition                        44.0   1   3.5041  0.062641 .  \
+Depression_Condition                     459.6   1  36.5966 6.796e-09 ***\
+Epilepsy_Condition:Depression_Condition  139.0   1  11.0672  0.001041 ** \
+Residuals                               2574.7 205                       \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+[1] "Partial Eta Squared for SDST ANOVA:"\
+Type 3 ANOVAs only give sensible and informative results when covariates are\
+  mean-centered and factors are coded with orthogonal contrasts (such as those\
+  produced by `contr.sum`, `contr.poly`, or `contr.helmert`, but *not* by the\
+  default `contr.treatment`).\
+# Effect Size for ANOVA (Type III)\
+\
+Parameter                               | Eta2 (partial) |       95% CI\
+-----------------------------------------------------------------------\
+Epilepsy_Condition                      |           0.02 | [0.00, 1.00]\
+Depression_Condition                    |           0.15 | [0.08, 1.00]\
+Epilepsy_Condition:Depression_Condition |           0.05 | [0.01, 1.00]\
+\
+- One-sided CIs: upper bound fixed at [1.00].[1] "Shapiro-Wilk test for normality of SDST ANOVA residuals (p > 0.05 suggests normality):"\
+\
+	Shapiro-Wilk normality test\
+\
+data:  residuals(sds_anova_model)\
+W = 0.95046, p-value = 1.296e-06\
+\
+[1] "Levene's test for homogeneity of variances for SDST (p > 0.05 suggests homogeneity):"\
+Levene's Test for Homogeneity of Variance (center = mean)\
+       Df F value  Pr(>F)  \
+group   3  2.8747 0.03726 *\
+      205                  \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+[1] "Comment: These ANOVA assumption checks help confirm if the non-parametric approach (Kruskal-Wallis) is indeed more appropriate for SDST."\
+[1] "--- End of Factorial ANOVA for SDST ---"\
+[1] "--- Kruskal-Wallis Test for SDST by VignetteGroup (Primary Analysis) ---"\
+\
+	Kruskal-Wallis rank sum test\
+\
+data:  SDST by VignetteGroup\
+Kruskal-Wallis chi-squared = 34.798, df = 3, p-value = 1.344e-07\
+\
+[1] "Eta squared for Kruskal-Wallis (SDST effect size):"\
+# A tibble: 1 \'d7 5\
+  .y.       n effsize method  magnitude\
+* <chr> <int>   <dbl> <chr>   <ord>    \
+1 SDST    209   0.155 eta2[H] large    \
+[1] "--- End of Kruskal-Wallis Test ---"\
+[1] "--- Pairwise Non-Parametric Post-Hoc Tests for SDST ---"\
+[1] "Run these if Kruskal-Wallis test is significant (p < .05)."\
+[1] "Pairwise Mann-Whitney U-tests (Wilcoxon) for SDST with Bonferroni correction:"\
+# A tibble: 6 \'d7 9\
+  .y.   group1         group2          n1    n2 statistic       p   p.adj p.adj.signif\
+* <chr> <chr>          <chr>        <int> <int>     <dbl>   <dbl>   <dbl> <chr>       \
+1 SDST  Control        EpilepsyOnly    51    51      894. 5   e-3 2.8 e-2 *           \
+2 SDST  Control        DepressionO\'85    51    53      526. 4.14e-8 2.48e-7 ****        \
+3 SDST  Control        Comorbid        51    54      852  4.69e-4 3   e-3 **          \
+4 SDST  EpilepsyOnly   DepressionO\'85    51    53      788  2.34e-4 1   e-3 **          \
+5 SDST  EpilepsyOnly   Comorbid        51    54     1219  3.08e-1 1   e+0 ns          \
+6 SDST  DepressionOnly Comorbid        53    54     1822  1.5 e-2 8.7 e-2 ns          \
+[1] "Dunn's test for SDST with Bonferroni correction:"\
+Dunn (1964) Kruskal-Wallis multiple comparison\
+  p-values adjusted with the Bonferroni method.\
+                     Comparison          Z      P.unadj        P.adj\
+1            Comorbid - Control  3.4224174 6.206695e-04 3.724017e-03\
+2     Comorbid - DepressionOnly -2.4424510 1.458791e-02 8.752746e-02\
+3      Control - DepressionOnly -5.8144696 6.082643e-09 3.649586e-08\
+4       Comorbid - EpilepsyOnly  0.9938012 3.203197e-01 1.000000e+00\
+5        Control - EpilepsyOnly -2.3946479 1.663633e-02 9.981799e-02\
+6 DepressionOnly - EpilepsyOnly  3.3969059 6.815240e-04 4.089144e-03\
+[1] "--- End of Post-Hoc Tests for SDST ---"\
+[1] "--- Descriptive Statistics for SDST (Median, IQR) by VignetteGroup ---"\
+# A tibble: 4 \'d7 4\
+  VignetteGroup  median_SDST IQR_SDST     n\
+  <fct>                <dbl>    <dbl> <int>\
+1 Control                7       4.5     51\
+2 EpilepsyOnly           9       5       51\
+3 DepressionOnly        13       6       53\
+4 Comorbid              10.5     6.75    54\
+[1] "--- End of Descriptive Statistics for SDST ---"\
+> print("--- End of SDS Score Analysis ---")\
+[1] "--- End of SDS Score Analysis ---"\
+> # --- VI. HYPOTHESIS 3 ANALYSIS: FAMILIARITY VS. KNOWLEDGE ---\
+> # H3: Familiarity (LoF scores) will be a stronger predictor of attitudes (AQ) and social distance (SDS) \
+> #     than knowledge (EKT/DKT scores), in relevant conditions.\
+> print("--- VI. HYPOTHESIS 3 ANALYSIS: FAMILIARITY VS. KNOWLEDGE ---")\
+[1] "--- VI. HYPOTHESIS 3 ANALYSIS: FAMILIARITY VS. KNOWLEDGE ---"\
+> # 0. Ensure Key Variables are Present and Numeric for H3\
+> h3_vars_needed <- c("LoF_Epilepsy_Total", "LoF_Depression_Total", "EKT", "DKT", \
++                     "AQ_Total_pSM", "SDST", "Epilepsy_Condition", "Depression_Condition")\
+> h3_vars_present_check <- sapply(h3_vars_needed, function(v) v %in% names(survey_data) && is.numeric(survey_data[[v]]) || (is.factor(survey_data[[v]]) && (v=="Epilepsy_Condition"||v=="Depression_Condition")))\
+> if (!all(h3_vars_present_check)) \{\
++   stop(paste("Error for H3: Not all necessary variables are present or of the correct type. Missing/incorrect:", \
++              paste(h3_vars_needed[!h3_vars_present_check], collapse=", ")))\
++ \} else \{\
++   print("All necessary variables for H3 are present and have correct basic types. Proceeding with H3 analysis.")\
++   \
++   # 1. Create Subsets for Analysis (Epilepsy-Present and Depression-Present conditions)\
++   epilepsy_present_data <- subset(survey_data, Epilepsy_Condition == "Present")\
++   depression_present_data <- subset(survey_data, Depression_Condition == "Present")\
++   print(paste("Number of rows in epilepsy_present_data:", nrow(epilepsy_present_data)))\
++   print(paste("Number of rows in depression_present_data:", nrow(depression_present_data)))\
++   \
++   # 2. Spearman Correlation Analyses\
++   # Comparing strength of correlations of LoF vs. Knowledge with AQ and SDS.\
++   print("--- Spearman Correlations for H3 ---")\
++   # Epilepsy-Present Conditions\
++   print("Correlations for Epilepsy-Present Conditions (LoF_Epilepsy_Total, EKT with AQ_Total_pSM, SDST):")\
++   if(nrow(epilepsy_present_data) > 2) \{\
++     cor_lof_ep_aq <- cor.test(~ LoF_Epilepsy_Total + AQ_Total_pSM, data = epilepsy_present_data, method = "spearman", exact = FALSE)\
++     print("LoF_Epilepsy_Total vs AQ_Total_pSM (Epilepsy Present):"); print(cor_lof_ep_aq)\
++     cor_lof_ep_sds <- cor.test(~ LoF_Epilepsy_Total + SDST, data = epilepsy_present_data, method = "spearman", exact = FALSE)\
++     print("LoF_Epilepsy_Total vs SDST (Epilepsy Present):"); print(cor_lof_ep_sds)\
++     cor_ekt_aq <- cor.test(~ EKT + AQ_Total_pSM, data = epilepsy_present_data, method = "spearman", exact = FALSE)\
++     print("EKT vs AQ_Total_pSM (Epilepsy Present):"); print(cor_ekt_aq)\
++     cor_ekt_sds <- cor.test(~ EKT + SDST, data = epilepsy_present_data, method = "spearman", exact = FALSE)\
++     print("EKT vs SDST (Epilepsy Present):"); print(cor_ekt_sds)\
++   \} else \{ print("Not enough data (<=2 rows) for epilepsy-present correlations.") \}\
++   \
++   # Depression-Present Conditions\
++   print("Correlations for Depression-Present Conditions (LoF_Depression_Total, DKT with AQ_Total_pSM, SDST):")\
++   if(nrow(depression_present_data) > 2) \{\
++     cor_lof_dep_aq <- cor.test(~ LoF_Depression_Total + AQ_Total_pSM, data = depression_present_data, method = "spearman", exact = FALSE)\
++     print("LoF_Depression_Total vs AQ_Total_pSM (Depression Present):"); print(cor_lof_dep_aq)\
++     cor_lof_dep_sds <- cor.test(~ LoF_Depression_Total + SDST, data = depression_present_data, method = "spearman", exact = FALSE)\
++     print("LoF_Depression_Total vs SDST (Depression Present):"); print(cor_lof_dep_sds)\
++     cor_dkt_aq <- cor.test(~ DKT + AQ_Total_pSM, data = depression_present_data, method = "spearman", exact = FALSE)\
++     print("DKT vs AQ_Total_pSM (Depression Present):"); print(cor_dkt_aq)\
++     cor_dkt_sds <- cor.test(~ DKT + SDST, data = depression_present_data, method = "spearman", exact = FALSE)\
++     print("DKT vs SDST (Depression Present):"); print(cor_dkt_sds)\
++   \} else \{ print("Not enough data (<=2 rows) for depression-present correlations.") \}\
++   # Interpretation: Compare rho values and p-values for LoF vs. Knowledge correlations.\
++   \
++   # 3. Multiple Regression Analyses\
++   # To see unique contribution of LoF and Knowledge when both are in the model.\
++   print("--- Multiple Regression Analyses for H3 ---")\
++   # Epilepsy-Present Conditions\
++   print("Regression for Epilepsy-Present: AQ_Total_pSM ~ LoF_Epilepsy_Total + EKT")\
++   if(nrow(epilepsy_present_data) > 3) \{ \
++     lm_ep_aq <- lm(AQ_Total_pSM ~ LoF_Epilepsy_Total + EKT, data = epilepsy_present_data)\
++     print(summary(lm_ep_aq)); if (length(coef(lm_ep_aq)) > 2) print(car::vif(lm_ep_aq))\
++   \} else \{ print("Not enough data (<=3 rows) for epilepsy-present regression (AQ_Total_pSM).") \}\
++   print("Regression for Epilepsy-Present: SDST ~ LoF_Epilepsy_Total + EKT")\
++   if(nrow(epilepsy_present_data) > 3) \{\
++     lm_ep_sds <- lm(SDST ~ LoF_Epilepsy_Total + EKT, data = epilepsy_present_data)\
++     print(summary(lm_ep_sds)); if (length(coef(lm_ep_sds)) > 2) print(car::vif(lm_ep_sds))\
++   \} else \{ print("Not enough data (<=3 rows) for epilepsy-present regression (SDST).") \}\
++   \
++   # Depression-Present Conditions\
++   print("Regression for Depression-Present: AQ_Total_pSM ~ LoF_Depression_Total + DKT")\
++   if(nrow(depression_present_data) > 3) \{\
++     lm_dep_aq <- lm(AQ_Total_pSM ~ LoF_Depression_Total + DKT, data = depression_present_data)\
++     print(summary(lm_dep_aq)); if (length(coef(lm_dep_aq)) > 2) print(car::vif(lm_dep_aq))\
++   \} else \{ print("Not enough data (<=3 rows) for depression-present regression (AQ_Total_pSM).") \}\
++   print("Regression for Depression-Present: SDST ~ LoF_Depression_Total + DKT")\
++   if(nrow(depression_present_data) > 3) \{\
++     lm_dep_sds <- lm(SDST ~ LoF_Depression_Total + DKT, data = depression_present_data)\
++     print(summary(lm_dep_sds)); if (length(coef(lm_dep_sds)) > 2) print(car::vif(lm_dep_sds))\
++   \} else \{ print("Not enough data (<=3 rows) for depression-present regression (SDST).") \}\
++   # Interpretation: Compare standardized coefficients (beta) and p-values for LoF vs. Knowledge predictors.\
++   # VIF > 5-10 suggests multicollinearity.\
++ \}\
+[1] "All necessary variables for H3 are present and have correct basic types. Proceeding with H3 analysis."\
+[1] "Number of rows in epilepsy_present_data: 105"\
+[1] "Number of rows in depression_present_data: 107"\
+[1] "--- Spearman Correlations for H3 ---"\
+[1] "Correlations for Epilepsy-Present Conditions (LoF_Epilepsy_Total, EKT with AQ_Total_pSM, SDST):"\
+[1] "LoF_Epilepsy_Total vs AQ_Total_pSM (Epilepsy Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  LoF_Epilepsy_Total and AQ_Total_pSM\
+S = 196322, p-value = 0.4331\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+        rho \
+-0.07807687 \
+\
+[1] "LoF_Epilepsy_Total vs SDST (Epilepsy Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  LoF_Epilepsy_Total and SDST\
+S = 181010, p-value = 0.952\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+        rho \
+0.006009687 \
+\
+[1] "EKT vs AQ_Total_pSM (Epilepsy Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  EKT and AQ_Total_pSM\
+S = 239864, p-value = 0.01237\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+       rho \
+-0.2433345 \
+\
+[1] "EKT vs SDST (Epilepsy Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  EKT and SDST\
+S = 194238, p-value = 0.9449\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+         rho \
+-0.006829808 \
+\
+[1] "Correlations for Depression-Present Conditions (LoF_Depression_Total, DKT with AQ_Total_pSM, SDST):"\
+[1] "LoF_Depression_Total vs AQ_Total_pSM (Depression Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  LoF_Depression_Total and AQ_Total_pSM\
+S = 172531, p-value = 0.598\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+       rho \
+0.05256694 \
+\
+[1] "LoF_Depression_Total vs SDST (Depression Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  LoF_Depression_Total and SDST\
+S = 197314, p-value = 0.4016\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+        rho \
+-0.08352335 \
+\
+[1] "DKT vs AQ_Total_pSM (Depression Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  DKT and AQ_Total_pSM\
+S = 220847, p-value = 0.4025\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+        rho \
+-0.08175471 \
+\
+[1] "DKT vs SDST (Depression Present):"\
+\
+	Spearman's rank correlation rho\
+\
+data:  DKT and SDST\
+S = 228722, p-value = 0.217\
+alternative hypothesis: true rho is not equal to 0\
+sample estimates:\
+       rho \
+-0.1203291 \
+\
+[1] "--- Multiple Regression Analyses for H3 ---"\
+[1] "Regression for Epilepsy-Present: AQ_Total_pSM ~ LoF_Epilepsy_Total + EKT"\
+\
+Call:\
+lm(formula = AQ_Total_pSM ~ LoF_Epilepsy_Total + EKT, data = epilepsy_present_data)\
+\
+Residuals:\
+    Min      1Q  Median      3Q     Max \
+-23.349  -7.719  -2.238   6.053  31.726 \
+\
+Coefficients:\
+                   Estimate Std. Error t value Pr(>|t|)    \
+(Intercept)         28.0173     2.9723   9.426  1.8e-15 ***\
+LoF_Epilepsy_Total  -0.1061     0.3821  -0.278    0.782    \
+EKT                 -1.7507     1.1013  -1.590    0.115    \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+\
+Residual standard error: 11.63 on 100 degrees of freedom\
+  (2 observations deleted due to missingness)\
+Multiple R-squared:  0.03233,	Adjusted R-squared:  0.01298 \
+F-statistic: 1.671 on 2 and 100 DF,  p-value: 0.1933\
+\
+LoF_Epilepsy_Total                EKT \
+          1.145006           1.145006 \
+[1] "Regression for Epilepsy-Present: SDST ~ LoF_Epilepsy_Total + EKT"\
+\
+Call:\
+lm(formula = SDST ~ LoF_Epilepsy_Total + EKT, data = epilepsy_present_data)\
+\
+Residuals:\
+    Min      1Q  Median      3Q     Max \
+-3.9854 -2.8065 -0.9195  2.3300  8.3033 \
+\
+Coefficients:\
+                   Estimate Std. Error t value Pr(>|t|)    \
+(Intercept)        10.78446    0.90720  11.888   <2e-16 ***\
+LoF_Epilepsy_Total  0.02511    0.11662   0.215    0.830    \
+EKT                -0.06589    0.33614  -0.196    0.845    \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+\
+Residual standard error: 3.551 on 100 degrees of freedom\
+  (2 observations deleted due to missingness)\
+Multiple R-squared:  0.0006265,	Adjusted R-squared:  -0.01936 \
+F-statistic: 0.03134 on 2 and 100 DF,  p-value: 0.9692\
+\
+LoF_Epilepsy_Total                EKT \
+          1.145006           1.145006 \
+[1] "Regression for Depression-Present: AQ_Total_pSM ~ LoF_Depression_Total + DKT"\
+\
+Call:\
+lm(formula = AQ_Total_pSM ~ LoF_Depression_Total + DKT, data = depression_present_data)\
+\
+Residuals:\
+    Min      1Q  Median      3Q     Max \
+-25.969  -8.658  -1.459   6.777  34.085 \
+\
+Coefficients:\
+                     Estimate Std. Error t value Pr(>|t|)    \
+(Intercept)          23.42396    6.59009   3.554  0.00058 ***\
+LoF_Depression_Total  0.30175    0.64057   0.471  0.63862    \
+DKT                  -0.05692    1.15659  -0.049  0.96085    \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+\
+Residual standard error: 13.12 on 100 degrees of freedom\
+  (4 observations deleted due to missingness)\
+Multiple R-squared:  0.002288,	Adjusted R-squared:  -0.01767 \
+F-statistic: 0.1147 on 2 and 100 DF,  p-value: 0.8918\
+\
+LoF_Depression_Total                  DKT \
+            1.085402             1.085402 \
+[1] "Regression for Depression-Present: SDST ~ LoF_Depression_Total + DKT"\
+\
+Call:\
+lm(formula = SDST ~ LoF_Depression_Total + DKT, data = depression_present_data)\
+\
+Residuals:\
+    Min      1Q  Median      3Q     Max \
+-5.3853 -3.9158  0.0159  3.0614 10.1070 \
+\
+Coefficients:\
+                     Estimate Std. Error t value Pr(>|t|)    \
+(Intercept)          13.59168    2.03576   6.676 1.39e-09 ***\
+LoF_Depression_Total -0.13373    0.19788  -0.676    0.501    \
+DKT                  -0.04553    0.35728  -0.127    0.899    \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+\
+Residual standard error: 4.054 on 100 degrees of freedom\
+  (4 observations deleted due to missingness)\
+Multiple R-squared:  0.005626,	Adjusted R-squared:  -0.01426 \
+F-statistic: 0.2829 on 2 and 100 DF,  p-value: 0.7542\
+\
+LoF_Depression_Total                  DKT \
+            1.085402             1.085402 \
+> print("--- End of Hypothesis 3 Analysis ---")\
+[1] "--- End of Hypothesis 3 Analysis ---"\
+> # --- VII. SCALE RELIABILITY ANALYSES ---\
+> print("--- VII. SCALE RELIABILITY ANALYSES ---")\
+[1] "--- VII. SCALE RELIABILITY ANALYSES ---"\
+> # 1. Define Item Lists (ensure these are the exact column names in Data.csv)\
+> aq_items_cols <- c("AQ_Pity", "AQ_Danger", "AQ_Fear", "AQ_Blame", "AQ_Anger", "AQ_No_Help", "AQ_Coercion")\
+> sds_items_cols <- c("SDS_Neighbour", "SDS_Socialise", "SDS_Friends", "SDS_Work", "SDS_Marry", "SDS_Rent", "SDS_Hire")\
+> ekt_items_cols <- c("EK_Q1", "EK_Q2", "EK_Q3", "EK_Q4", "EK_Q5") # Epilepsy Knowledge Test items\
+> dkt_items_cols <- c("DK_Q1", "DK_Q2", "DK_Q3", "DK_Q4", "DK_Q5") # Depression Knowledge Test items\
+> all_item_lists_for_reliability <- list(AQ = aq_items_cols, SDS = sds_items_cols, EKT = ekt_items_cols, DKT = dkt_items_cols)\
+> # Check if item columns exist and update lists to only include existing columns\
+> for (scale_name in names(all_item_lists_for_reliability)) \{\
++   cols_to_check <- all_item_lists_for_reliability[[scale_name]]\
++   existing_cols_for_scale <- intersect(cols_to_check, names(survey_data))\
++   if (length(existing_cols_for_scale) < length(cols_to_check)) \{\
++     print(paste("Warning for", scale_name, "reliability: Missing item columns:", paste(setdiff(cols_to_check, existing_cols_for_scale), collapse=", ")))\
++   \}\
++   if (length(existing_cols_for_scale) < 2) \{\
++     print(paste("Warning for", scale_name, ": Fewer than 2 items available. Cannot calculate reliability."))\
++     all_item_lists_for_reliability[[scale_name]] <- c() # Empty list if not enough items\
++   \} else \{\
++     all_item_lists_for_reliability[[scale_name]] <- existing_cols_for_scale\
++   \}\
++ \}\
+> # Helper function for reliability calculation\
+> calculate_scale_reliability <- function(data, item_cols_vector, scale_name_str, check_keys_bool = FALSE) \{\
++   print(paste("--- Reliability Analysis for", scale_name_str, "items ---"))\
++   if (length(item_cols_vector) < 2) \{\
++     print(paste("Skipping", scale_name_str, "reliability: Not enough valid item columns found (need at least 2)."))\
++     return(NULL)\
++   \}\
++   item_data_subset <- data[, item_cols_vector, drop = FALSE]\
++   item_data_subset <- data.frame(lapply(item_data_subset, function(x) \{\
++     if(is.factor(x)) as.numeric(as.character(x)) else as.numeric(x)\
++   \}))\
++   item_data_na_omitted_subset <- na.omit(item_data_subset)\
++   if (ncol(item_data_na_omitted_subset) >= 2 && nrow(item_data_na_omitted_subset) > 10) \{\
++     alpha_output <- psych::alpha(item_data_na_omitted_subset, check.keys = check_keys_bool)\
++     print(alpha_output)\
++     if (check_keys_bool) \{\
++       print(paste("For", scale_name_str, "check alpha_output$keys for auto-reversed items. Compare to theory."))\
++     \}\
++     # For KR-20 (EKT/DKT), psych::alpha on dichotomous data provides this.\
++     if(scale_name_str %in% c("EKT", "DKT")) print(paste(scale_name_str, "alpha (KR-20 if items are 0/1):", alpha_output$total$raw_alpha))\
++     \
++   \} else \{\
++     print(paste("Could not compute", scale_name_str, "reliability: Insufficient valid items (need >=2) or observations (need >10) after NA removal."))\
++     print(paste("Dims of NA-omitted data for",scale_name_str,": Rows =", nrow(item_data_na_omitted_subset), "Cols =", ncol(item_data_na_omitted_subset)))\
++     return(NULL)\
++   \}\
++   return(alpha_output)\
++ \}\
+> # AQ-7 Reliability (check.keys=TRUE due to potential reverse scoring for Negative Attribution Index)\
+> # Paper mentioned AQ_Pity and AQ_No_Help might be reverse keyed.\
+> print("# Note for AQ-7: Paper mentions AQ_Pity and AQ_No_Help might be reverse keyed. check.keys=TRUE will attempt to identify these.")\
+[1] "# Note for AQ-7: Paper mentions AQ_Pity and AQ_No_Help might be reverse keyed. check.keys=TRUE will attempt to identify these."\
+> alpha_aq_results <- calculate_scale_reliability(survey_data, all_item_lists_for_reliability[["AQ"]], "AQ-7", check_keys_bool = TRUE)\
+[1] "--- Reliability Analysis for AQ-7 items ---"\
+\
+Reliability analysis   \
+Call: psych::alpha(x = item_data_na_omitted_subset, check.keys = check_keys_bool)\
+\
+  raw_alpha std.alpha G6(smc) average_r S/N   ase mean  sd median_r\
+      0.62      0.71    0.71      0.26 2.4 0.039  2.8 1.1     0.25\
+\
+    95% confidence boundaries \
+         lower alpha upper\
+Feldt     0.54  0.62  0.69\
+Duhachek  0.54  0.62  0.70\
+\
+ Reliability if an item is dropped:\
+            raw_alpha std.alpha G6(smc) average_r S/N alpha se var.r med.r\
+AQ_Pity          0.60      0.71    0.70      0.29 2.4    0.042 0.020  0.27\
+AQ_Danger        0.53      0.64    0.64      0.23 1.8    0.048 0.020  0.24\
+AQ_Fear          0.54      0.64    0.63      0.23 1.8    0.047 0.016  0.24\
+AQ_Blame         0.60      0.67    0.67      0.26 2.1    0.042 0.021  0.25\
+AQ_Anger         0.59      0.65    0.63      0.24 1.9    0.042 0.013  0.25\
+AQ_No_Help       0.66      0.73    0.72      0.31 2.7    0.033 0.016  0.30\
+AQ_Coercion      0.56      0.68    0.67      0.26 2.1    0.046 0.021  0.25\
+\
+ Item statistics \
+              n raw.r std.r r.cor r.drop mean   sd\
+AQ_Pity     209  0.62  0.50  0.36   0.33  5.8 2.66\
+AQ_Danger   209  0.67  0.70  0.64   0.51  2.4 1.73\
+AQ_Fear     209  0.66  0.71  0.67   0.50  2.0 1.67\
+AQ_Blame    209  0.46  0.61  0.51   0.37  1.3 0.73\
+AQ_Anger    209  0.52  0.68  0.64   0.43  1.3 0.80\
+AQ_No_Help  209  0.50  0.43  0.25   0.18  3.5 2.62\
+AQ_Coercion 209  0.66  0.60  0.49   0.41  3.2 2.42\
+\
+Non missing response frequency for each item\
+               1    2    3    4    5    6    7    8    9 miss\
+AQ_Pity     0.10 0.07 0.06 0.08 0.10 0.11 0.16 0.12 0.21    0\
+AQ_Danger   0.48 0.16 0.16 0.06 0.07 0.05 0.03 0.00 0.00    0\
+AQ_Fear     0.59 0.21 0.08 0.01 0.04 0.02 0.01 0.02 0.00    0\
+AQ_Blame    0.84 0.10 0.04 0.01 0.01 0.00 0.00 0.00 0.00    0\
+AQ_Anger    0.82 0.09 0.06 0.01 0.00 0.01 0.00 0.00 0.00    0\
+AQ_No_Help  0.33 0.15 0.12 0.06 0.11 0.02 0.10 0.05 0.06    0\
+AQ_Coercion 0.40 0.12 0.10 0.08 0.13 0.04 0.07 0.01 0.05    0\
+[1] "For AQ-7 check alpha_output$keys for auto-reversed items. Compare to theory."\
+> # SDS Reliability (check.keys=TRUE as good practice if unsure about item directionality)\
+> alpha_sds_results <- calculate_scale_reliability(survey_data, all_item_lists_for_reliability[["SDS"]], "SDS", check_keys_bool = TRUE)\
+[1] "--- Reliability Analysis for SDS items ---"\
+\
+Reliability analysis   \
+Call: psych::alpha(x = item_data_na_omitted_subset, check.keys = check_keys_bool)\
+\
+  raw_alpha std.alpha G6(smc) average_r S/N  ase mean   sd median_r\
+       0.9       0.9     0.9      0.57 9.1 0.01  1.6 0.55     0.58\
+\
+    95% confidence boundaries \
+         lower alpha upper\
+Feldt     0.88   0.9  0.92\
+Duhachek  0.88   0.9  0.92\
+\
+ Reliability if an item is dropped:\
+              raw_alpha std.alpha G6(smc) average_r S/N alpha se  var.r med.r\
+SDS_Neighbour      0.90      0.90    0.89      0.60 8.9    0.011 0.0046  0.61\
+SDS_Socialise      0.89      0.89    0.87      0.57 8.1    0.011 0.0042  0.60\
+SDS_Friends        0.88      0.88    0.87      0.55 7.4    0.012 0.0057  0.58\
+SDS_Work           0.88      0.88    0.88      0.56 7.6    0.012 0.0067  0.54\
+SDS_Marry          0.88      0.88    0.87      0.55 7.4    0.013 0.0072  0.54\
+SDS_Rent           0.89      0.89    0.88      0.57 8.0    0.012 0.0067  0.58\
+SDS_Hire           0.88      0.88    0.88      0.56 7.6    0.012 0.0076  0.58\
+\
+ Item statistics \
+                n raw.r std.r r.cor r.drop mean   sd\
+SDS_Neighbour 209  0.69  0.71  0.63   0.60  1.4 0.59\
+SDS_Socialise 209  0.76  0.77  0.74   0.68  1.5 0.61\
+SDS_Friends   209  0.81  0.83  0.80   0.75  1.5 0.61\
+SDS_Work      209  0.82  0.81  0.78   0.74  1.5 0.67\
+SDS_Marry     209  0.84  0.83  0.80   0.76  1.7 0.77\
+SDS_Rent      209  0.79  0.78  0.73   0.70  1.6 0.76\
+SDS_Hire      209  0.83  0.82  0.78   0.74  1.8 0.81\
+\
+Non missing response frequency for each item\
+                 1    2    3    4 miss\
+SDS_Neighbour 0.67 0.29 0.04 0.00    0\
+SDS_Socialise 0.58 0.36 0.06 0.00    0\
+SDS_Friends   0.58 0.35 0.06 0.00    0\
+SDS_Work      0.59 0.32 0.09 0.00    0\
+SDS_Marry     0.47 0.35 0.17 0.01    0\
+SDS_Rent      0.52 0.35 0.10 0.02    0\
+SDS_Hire      0.40 0.38 0.20 0.02    0\
+[1] "For SDS check alpha_output$keys for auto-reversed items. Compare to theory."\
+> # EKT Reliability (KR-20 for dichotomous knowledge items)\
+> # check.keys=FALSE if all '1's mean correct and '0's incorrect.\
+> alpha_ekt_results <- calculate_scale_reliability(survey_data, all_item_lists_for_reliability[["EKT"]], "EKT", check_keys_bool = FALSE)\
+[1] "--- Reliability Analysis for EKT items ---"\
+\
+Reliability analysis   \
+Call: psych::alpha(x = item_data_na_omitted_subset, check.keys = check_keys_bool)\
+\
+  raw_alpha std.alpha G6(smc) average_r  S/N   ase mean   sd median_r\
+      0.33      0.33    0.31     0.089 0.49 0.073  0.5 0.23     0.12\
+\
+    95% confidence boundaries \
+         lower alpha upper\
+Feldt     0.18  0.33  0.46\
+Duhachek  0.19  0.33  0.47\
+\
+ Reliability if an item is dropped:\
+      raw_alpha std.alpha G6(smc) average_r  S/N alpha se  var.r med.r\
+EK_Q1      0.24      0.24    0.21     0.074 0.32    0.085 0.0068 0.096\
+EK_Q2      0.30      0.30    0.28     0.099 0.44    0.079 0.0101 0.127\
+EK_Q3      0.22      0.20    0.18     0.060 0.26    0.087 0.0075 0.091\
+EK_Q4      0.30      0.29    0.26     0.091 0.40    0.079 0.0128 0.122\
+EK_Q5      0.35      0.36    0.31     0.122 0.56    0.074 0.0062 0.131\
+\
+ Item statistics \
+        n raw.r std.r r.cor r.drop mean   sd\
+EK_Q1 209  0.54  0.56  0.37  0.210 0.78 0.41\
+EK_Q2 209  0.47  0.50  0.24  0.135 0.20 0.40\
+EK_Q3 209  0.59  0.59  0.43  0.230 0.73 0.45\
+EK_Q4 209  0.56  0.52  0.27  0.149 0.56 0.50\
+EK_Q5 209  0.43  0.45  0.14  0.081 0.21 0.41\
+\
+Non missing response frequency for each item\
+         0    1 miss\
+EK_Q1 0.22 0.78    0\
+EK_Q2 0.80 0.20    0\
+EK_Q3 0.27 0.73    0\
+EK_Q4 0.44 0.56    0\
+EK_Q5 0.79 0.21    0\
+[1] "EKT alpha (KR-20 if items are 0/1): 0.330373512600209"\
+> # DKT Reliability (KR-20 for dichotomous knowledge items)\
+> # Paper mentioned DK_Q1 was auto-reversed, so check.keys=TRUE is appropriate here.\
+> alpha_dkt_results <- calculate_scale_reliability(survey_data, all_item_lists_for_reliability[["DKT"]], "DKT", check_keys_bool = TRUE)\
+[1] "--- Reliability Analysis for DKT items ---"\
+\
+Reliability analysis   \
+Call: psych::alpha(x = item_data_na_omitted_subset, check.keys = check_keys_bool)\
+\
+  raw_alpha std.alpha G6(smc) average_r  S/N   ase mean   sd median_r\
+       0.3      0.35    0.34     0.099 0.55 0.075  1.8 0.28     0.11\
+\
+    95% confidence boundaries \
+         lower alpha upper\
+Feldt     0.14   0.3  0.44\
+Duhachek  0.15   0.3  0.45\
+\
+ Reliability if an item is dropped:\
+       raw_alpha std.alpha G6(smc) average_r  S/N alpha se  var.r med.r\
+DK_Q1-      0.23      0.32    0.29     0.104 0.46    0.085 0.0138 0.107\
+DK_Q2       0.21      0.28    0.26     0.087 0.38    0.085 0.0165 0.105\
+DK_Q3       0.31      0.34    0.31     0.116 0.52    0.074 0.0116 0.113\
+DK_Q4       0.29      0.33    0.28     0.110 0.50    0.076 0.0052 0.105\
+DK_Q5       0.24      0.25    0.24     0.077 0.34    0.085 0.0202 0.048\
+\
+ Item statistics \
+         n raw.r std.r r.cor r.drop mean   sd\
+DK_Q1- 209  0.51  0.52  0.29   0.18  2.6 0.49\
+DK_Q2  209  0.60  0.56  0.35   0.19  2.1 0.61\
+DK_Q3  209  0.61  0.49  0.24   0.11  1.3 0.72\
+DK_Q4  209  0.46  0.50  0.28   0.10  2.1 0.52\
+DK_Q5  209  0.39  0.58  0.38   0.23  1.0 0.25\
+\
+Non missing response frequency for each item\
+        0    1    2    3 miss\
+DK_Q1 0.6 0.40 0.00 0.00    0\
+DK_Q2 0.0 0.16 0.62 0.22    0\
+DK_Q3 0.0 0.82 0.03 0.15    0\
+DK_Q4 0.0 0.09 0.72 0.19    0\
+DK_Q5 0.0 0.98 0.00 0.01    0\
+[1] "For DKT check alpha_output$keys for auto-reversed items. Compare to theory."\
+[1] "DKT alpha (KR-20 if items are 0/1): 0.300448190593942"\
+Warning message:\
+In psych::alpha(item_data_na_omitted_subset, check.keys = check_keys_bool) :\
+  Some items were negatively correlated with the first principal component and were automatically reversed.\
+ This is indicated by a negative sign for the variable name.\
+\
+> print("# General interpretation of psych::alpha output:")\
+[1] "# General interpretation of psych::alpha output:"\
+> print("# - total$raw_alpha: Cronbach's alpha. For dichotomous items (EKT/DKT), this is KR-20.")\
+[1] "# - total$raw_alpha: Cronbach's alpha. For dichotomous items (EKT/DKT), this is KR-20."\
+> print("# - total$std.alpha: Standardized alpha (if items had different variances).")\
+[1] "# - total$std.alpha: Standardized alpha (if items had different variances)."\
+> print("# - G6(smc): Guttman's Lambda 6.")\
+[1] "# - G6(smc): Guttman's Lambda 6."\
+> print("# - item.stats: Includes item-total correlations ('r.cor') and alpha if item dropped ('alpha.drop').")\
+[1] "# - item.stats: Includes item-total correlations ('r.cor') and alpha if item dropped ('alpha.drop')."\
+> print("--- End of Scale Reliability Analyses ---")\
+[1] "--- End of Scale Reliability Analyses ---"\
+> # --- VIII. FINAL SCRIPT GUIDANCE ---\
+> print("--- VIII. FINAL SCRIPT GUIDANCE ---")\
+[1] "--- VIII. FINAL SCRIPT GUIDANCE ---"\
+> print("--- END OF SCRIPT ---")\
+[1] "--- END OF SCRIPT ---"}
